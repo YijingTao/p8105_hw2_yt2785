@@ -31,7 +31,7 @@ trash_wheel_df = drop_na(trash_wheel_df, dumpster)
 trash_wheel_df = select(trash_wheel_df, !starts_with("x"))#omit columns containing notes
 rounding_sports_balls = round(trash_wheel_df$sports_balls,digit = 0)
 trash_wheel_df = transform(trash_wheel_df, sports_balls = rounding_sports_balls)
-
+trash_wheel_df
 ```
 
 Read and clean precipitation data for 2018 and 2019. For each, omit rows without precipitation data and add a variable for year. 
@@ -40,12 +40,18 @@ Next, combine precipitation datasets and convert month to a character variable (
 ```{r warning=FALSE}
 precipitation_2018_df = filter(trash_wheel_df, year %in% c("2018")) %>% 
   janitor::clean_names() %>% 
-  filter(!is.na()) %>% 
   mutate(year = 2018) %>% 
-  select(year, month, total)
-precipitation_df = select(precipitation_df, year,weight_tons:homes_powered)
-as.character(precipitation_df,)
+  select(year, month, weight_tons:homes_powered)
 
+precipitation_2019_df = filter(trash_wheel_df, year %in% c("2019")) %>% 
+  janitor::clean_names() %>% 
+  mutate(year = 2019) %>% 
+  select(year, month, weight_tons:homes_powered)
+
+precipitation_df = bind_rows(precipitation_2018_df,precipitation_2019_df) %>% 
+  janitor::clean_names() 
+
+precipitation_df
 ```
 
 
@@ -66,6 +72,7 @@ janitor::clean_names() %>%
            year = as.numeric(year)) %>% 
   select(-prez_dem, -prez_gop) %>% 
   select(-day)
+pols_month_df
 ```
 
 
@@ -80,6 +87,7 @@ janitor::clean_names() %>%
   mutate(year = recode(year, '50' = "1950",'51' = "1951",'52' = "1952",'53' = "1953",'54' = "1954",'55' = "1955",'56' = "1956",'57' = "1957",'58' = "1958",'59' = "1959",'60' = "1961",'62' = "1962",'563' = "1963",'64' = "1964",'65' = "1965",'66' = "1966",'67' = "1967",'68' = "1968",'69' = "1969",'70' = "1970",'71' = "1971",'72' = "1972",'73' = "1973",'74' = "1974",'75' = "1975",'76' = "1976",'77' = "1977",'78' = "1978",'79' = "1979",'80' = "1980",'81' = "1981",'82' = "1982",'83' = "1983",'84' = "1984",'85' = "1985",'86' = "1986",'87' = "1987",'88' = "1988",'89' = "1989",'90' = "1990",'91' = "1951",'51' = "1951",'51' = "1951",'51' = "1951",'51' = "1951",'51' = "1951",'51' = "1951",'51' = "1951",'91' = "1991",'92' = "1992",'93' = "1993",'94' = "1994",'95' = "1995",'96' = "1996",'97' = "1997",'98' = "1998",'99' = "1999",'00' = "2000",'01' = "2001",'02' = "2002",'03' = "2003",'04' = "2004",'05' = "2005",'06' = "2006",'07' = "2007",'08' = "2008",'09' = "2009",'10' = "2010",'11' = "2011",'12' = "2012",'13' = "2013",'14' = "2014",'15' = "2015")) %>% 
   arrange(year, month) %>% 
   relocate(year, month)
+snp_df
 ```
 
 
@@ -90,8 +98,12 @@ unempoyment_df =
   read_csv("./data_hw2/unemployment.csv") %>% 
   janitor::clean_names() %>% 
 pivot_longer(
-  year:dec,
-    names_to = "unemployment")
+  jan:dec,
+    names_to = "month",
+  values_to = "percentage") %>% 
+  mutate(month = as.factor(month)) %>% 
+  mutate(month = month.name[month])
+unempoyment_df
 ```
 
 
@@ -101,7 +113,7 @@ Write a short paragraph about these datasets. Explain briefly what each dataset 
 
 Note: we could have used a date variable as a key instead of creating year and month keys; doing so would help with some kinds of plotting, and be a more accurate representation of the data. Date formats are tricky, though. For more information check out the lubridate package in the tidyverse.
 
-Problem 3
+**Problem 3**
 This problem uses data from NYC Open data on the popularity of baby names, and can be downloaded here.
 
 Load and tidy the data. Note that, although these data may seem fairly well formatted initially, the names of a categorical predictor and the case structure of string variables changed over time; you¡¯ll need to address this in your data cleaning. Also, some rows seem duplicated, and these will need to be removed (hint: google something like ¡°dplyr remove duplicate rows¡± to get started).
@@ -110,23 +122,32 @@ Load and tidy the data. Note that, although these data may seem fairly well form
 popular_baby_names_df = 
   read_csv("./data_hw2/Popular_Baby_Names.csv") %>% 
   janitor::clean_names() %>% 
+  mutate(ethnicity = recode(ethnicity, 'ASIAN AND PACI' = "ASIAN AND PACIFIC ISLANDER", 'BLACK NON HISP' = "BLACK NON HISPANIC", 'WHITE NON HISP' = "WHITE NON HISPANIC")) %>% 
   distinct(year_of_birth,gender,ethnicity,childs_first_name,count,rank, .keep_all = TRUE)
+popular_baby_names_df
 ```
 
 Produce a well-structured, reader-friendly table showing the rank in popularity of the name ¡°Olivia¡± as a female baby name over time; this should have rows for ethnicities and columns for year. 
 
 ```{r}
 olivia_df = filter(popular_baby_names_df, childs_first_name == "Olivia", gender == "FEMALE") %>% 
-  select(year_of_birth, gender, ethnicity, childs_first_name, rank)
+  select(year_of_birth, ethnicity, rank) %>% 
+ pivot_wider(
+    names_from = "year_of_birth",#name from another column
+    values_from = "rank"#values from another column
+  ) 
 olivia_df
-
 ```
 
 Produce a similar table showing the most popular name among male children over time.
 
 ```{r}
 popular_male_name_df = filter(popular_baby_names_df,gender == "MALE", rank == 1) %>% 
-  select(year_of_birth, gender, ethnicity, childs_first_name, rank)
+  select(year_of_birth, ethnicity, childs_first_name) %>% 
+ pivot_wider(
+    names_from = "year_of_birth",#name from another column
+    values_from = "childs_first_name"#values from another column
+  ) 
 popular_male_name_df
 ```
 
@@ -136,8 +157,4 @@ Finally, for male, white non-hispanic children born in 2016, produce a scatter p
 ```{r}
 male_white_2016_df = filter(popular_baby_names_df,gender == "MALE", ethnicity == "WHITE NON HISPANIC", year_of_birth == 2016) 
 ggplot(male_white_2016_df, aes(x = rank, y = count)) + geom_point()
-  
 ```
-
-
-Optional post-assignment survey
