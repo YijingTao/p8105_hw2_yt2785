@@ -18,7 +18,7 @@ library(ggplot2)
 
 
 ```{r warning=FALSE}
-trash_wheel_df = read_excel("./data_hw2/Trash-Wheel-Collection-Totals-8-6-19.xlsx")
+trash_wheel_df = read_excel("./data_hw2/Trash-Wheel-Collection-Totals-7-2020-2.xlsx")
 trash_wheel_df = janitor::clean_names(trash_wheel_df)
 trash_wheel_df = drop_na(trash_wheel_df, dumpster)
 trash_wheel_df = select(trash_wheel_df, !starts_with("x"))#omit columns containing notes
@@ -30,10 +30,13 @@ trash_wheel_df = transform(trash_wheel_df, sports_balls = rounding_sports_balls)
 n_row_trash_wheel = nrow(trash_wheel_df)
 n_col_trash_wheel = ncol(trash_wheel_df)
 trash_wheel_name = colnames(trash_wheel_df)
-summary_trash_wheel_df = knitr::kable(summary(trash_wheel_df))
+before_summary_trash_wheel_df = trash_wheel_df %>% 
+    janitor::clean_names() %>% 
+  select(weight_tons:homes_powered)
+summary_trash_wheel_df = knitr::kable(summary(before_summary_trash_wheel_df))
 ```
 
-**There are `r n_row_trash_wheel` rows and `r n_col_trash_wheel` columns in the dataset. The variables includes `r trash_wheel_name` . The summary of the dataset is `r summary_trash_wheel_df`**
+There are `r n_row_trash_wheel` rows and `r n_col_trash_wheel` columns in the dataset. The variables includes `r trash_wheel_name` . The summary of the dataset is `r summary_trash_wheel_df`
 
 ```{r warning=FALSE}
 precipitation_2018_df = filter(trash_wheel_df, year %in% c("2018")) %>% 
@@ -56,10 +59,13 @@ precipitation_df = bind_rows(precipitation_2018_df,precipitation_2019_df) %>%
 n_row_precipitation = nrow(precipitation_df)
 n_col_precipitation = ncol(precipitation_df)
 recipitation_name = colnames(precipitation_df)
-summary_precipitation_df = knitr::kable(summary(precipitation_df))
+before_summary_precipitation_df = precipitation_df %>% 
+    janitor::clean_names() %>% 
+  select(weight_tons:homes_powered)
+summary_precipitation_df = knitr::kable(summary(before_summary_precipitation_df))
 ```
 
-**There are `r n_row_precipitation` rows and `r n_col_precipitation` columns in the dataset. The variables includes `r recipitation_name` . The summary of the dataset is `r summary_precipitation_df`**
+There are `r n_row_precipitation` rows and `r n_col_precipitation` columns in the dataset. The variables includes `r recipitation_name` . The summary of the dataset is `r summary_precipitation_df`
 
 **Problem 2**
 
@@ -81,10 +87,13 @@ janitor::clean_names() %>%
 n_row_pols_month = nrow(pols_month_df)
 n_col_pols_month = ncol(pols_month_df)
 pols_month_name = colnames(pols_month_df)
-summary_pols_month_df = knitr::kable(summary(pols_month_df))
+before_pols_month_df = pols_month_df %>% 
+    janitor::clean_names() %>% 
+  select(gov_gop:president)
+summary_pols_month_df = knitr::kable(summary(before_pols_month_df))
 ```
 
-**There are `r n_row_pols_month` rows and `r n_col_pols_month` columns in the dataset. The variables includes `r pols_month_name` . The summary of the dataset is `r summary_pols_month_df`**
+There are `r n_row_pols_month` rows and `r n_col_pols_month` columns in the dataset. The variables includes `r pols_month_name` . The summary of the dataset is `r summary_pols_month_df`
 
 ```{r}
 snp_df = 
@@ -101,10 +110,13 @@ janitor::clean_names() %>%
 n_row_snp = nrow(snp_df)
 n_col_snp = ncol(snp_df)
 snp_name = colnames(snp_df)
-summary_snp_df = knitr::kable(summary(snp_df))
+before_summary_snp_df = snp_df %>% 
+    janitor::clean_names() %>% 
+  select(close)
+summary_snp_df = knitr::kable(summary(before_summary_snp_df))
 ```
 
-**There are `r n_row_snp` rows and `r n_col_snp` columns in the dataset. The variables includes `r snp_name` . The summary of the dataset is `r summary_snp_df`**
+There are `r n_row_snp` rows and `r n_col_snp` columns in the dataset. The variables includes `r snp_name` . The summary of the dataset is `r summary_snp_df`
 
 ```{r}
 unempoyment_df = 
@@ -122,10 +134,13 @@ pivot_longer(
 n_row_unempoyment = nrow(unempoyment_df)
 n_col_unempoyment = ncol(unempoyment_df)
 unempoyment_name = colnames(unempoyment_df)
-summary_unempoyment_df = knitr::kable(summary(unempoyment_df))
+before_unempoyment_df = unempoyment_df %>% 
+    janitor::clean_names() %>% 
+  select(percentage)
+summary_unempoyment_df = knitr::kable(summary(before_unempoyment_df))
 ```
 
-**There are `r n_row_unempoyment` rows and `r n_col_unempoyment` columns in the dataset. The variables includes `r unempoyment_name`. The summary of the dataset is `r summary_unempoyment_df`**
+There are `r n_row_unempoyment` rows and `r n_col_unempoyment` columns in the dataset. The variables includes `r unempoyment_name`. The summary of the dataset is `r summary_unempoyment_df`
 
 **Problem 3**
 
