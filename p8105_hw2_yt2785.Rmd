@@ -16,15 +16,56 @@ library(ggplot2)
 
 **Problem 1**
 
+Read and clean the Mr. Trash Wheel sheet
 
 ```{r warning=FALSE}
-trash_wheel_df = read_excel("./data_hw2/Trash-Wheel-Collection-Totals-7-2020-2.xlsx")
-trash_wheel_df = janitor::clean_names(trash_wheel_df)
-trash_wheel_df = drop_na(trash_wheel_df, dumpster)
-trash_wheel_df = select(trash_wheel_df, !starts_with("x"))#omit columns containing notes
-rounding_sports_balls = round(trash_wheel_df$sports_balls,digit = 0)
-trash_wheel_df = transform(trash_wheel_df, sports_balls = rounding_sports_balls)
+trash_wheel_df = 
+  read_excel("./data_hw2/Trash_Wheel_Collection_Totals_7_2020_2.xlsx",
+             sheet = "Mr. Trash Wheel",
+             range =  cell_cols("A:N"), 
+             col_names = TRUE, 
+             trim_ws = TRUE, 
+             skip = 1) %>%
+  janitor::clean_names() %>%
+  filter(!is.na(dumpster)) %>% 
+  mutate(sports_balls = round(sports_balls, 0))
+
+trash_wheel_df
 ```
+
+Read and clean precipitation data for 2018 and 2019
+
+```{r warning=FALSE}
+precipitation_2018_df =
+  read_excel("./data_hw2/Trash_Wheel_Collection_Totals_7_2020_2.xlsx",
+             sheet = "2018 Precipitation", 
+             range = "A2:B14",
+             col_names = TRUE, 
+             trim_ws = TRUE) %>% 
+  janitor::clean_names() %>% 
+  filter(!is.na(total)) %>% 
+  mutate(year = 2018) %>% 
+  select(year, month, total)
+
+precipitation_2019_df =
+  read_excel("./data_hw2/Trash_Wheel_Collection_Totals_7_2020_2.xlsx",
+             sheet = "2019 Precipitation", 
+             range = "A2:B14",
+             col_names = TRUE, 
+             trim_ws = TRUE) %>% 
+  janitor::clean_names() %>% 
+  filter(!is.na(total)) %>% 
+  mutate(year = 2019) %>% 
+  select(year, month, total)
+
+precipitation_df = bind_rows(precipitation_2018_df,precipitation_2019_df) %>% 
+  janitor::clean_names() %>% 
+  mutate(month = month.name[month])
+
+precipitation_df
+```
+
+conclusion data
 
 ```{r}
 n_row_trash_wheel = nrow(trash_wheel_df)
@@ -36,24 +77,6 @@ before_summary_trash_wheel_df = trash_wheel_df %>%
 summary_trash_wheel_df = knitr::kable(summary(before_summary_trash_wheel_df))
 ```
 
-There are `r n_row_trash_wheel` rows and `r n_col_trash_wheel` columns in the dataset. The variables includes `r trash_wheel_name` . The summary of the dataset is `r summary_trash_wheel_df`
-
-```{r warning=FALSE}
-precipitation_2018_df = filter(trash_wheel_df, year %in% c("2018")) %>% 
-  janitor::clean_names() %>% 
-  mutate(year = 2018) %>% 
-  select(year, month, weight_tons:homes_powered)
-
-precipitation_2019_df = filter(trash_wheel_df, year %in% c("2019")) %>% 
-  janitor::clean_names() %>% 
-  mutate(year = 2019) %>% 
-  select(year, month, weight_tons:homes_powered)
-
-precipitation_df = bind_rows(precipitation_2018_df,precipitation_2019_df) %>% 
-  janitor::clean_names() 
-
-```
-
 
 ```{r}
 n_row_precipitation = nrow(precipitation_df)
@@ -61,39 +84,40 @@ n_col_precipitation = ncol(precipitation_df)
 recipitation_name = colnames(precipitation_df)
 before_summary_precipitation_df = precipitation_df %>% 
     janitor::clean_names() %>% 
-  select(weight_tons:homes_powered)
+  select(total)
 summary_precipitation_df = knitr::kable(summary(before_summary_precipitation_df))
+year_2018_df = filter(precipitation_df, year == "2018")
+sum_2018 = sum(pull(year_2018_df, total))
+trash_wheel_2019_df = filter(trash_wheel_df, year == 2019)
+median_sport_ball_2019 = median(pull(trash_wheel_2019_df, sports_balls))
 ```
+**CONCLUSION 1**
+In dataset of Mr. Trash Wheel, there are `r n_row_trash_wheel` observations and `r n_col_trash_wheel` columns in the dataset. The variables includes `r trash_wheel_name` . The summary of the dataset is `r summary_trash_wheel_df`
 
-There are `r n_row_precipitation` rows and `r n_col_precipitation` columns in the dataset. The variables includes `r recipitation_name` . The summary of the dataset is `r summary_precipitation_df`
+In precipitation dataframe, there are `r n_row_precipitation` observations and `r n_col_precipitation` columns in the dataset. The variables includes `r recipitation_name` . The summary of the dataset is `r summary_precipitation_df`
+
+Total precipitation in 2018 is `r sum_2018`.
+The median number of sports balls in a dumpster in 2019 is `r median_sport_ball_2019`.
 
 **Problem 2**
 
+First, clean the data in pols-month.csv. 
 
 ```{r}
 pols_month_df = 
-  read_csv("./data_hw2/pols-month.csv") %>% 
-janitor::clean_names() %>% 
+  read_csv("./data_hw2/pols-month.csv") %>%
+  janitor::clean_names() %>% 
     separate(mon, into = c("year", "month", "day"), sep = "\\-") %>% 
     mutate(month = month.name[as.numeric(month)],
-          president = recode(prez_dem, '0' = "gop", '1' = "dem"),
+           president = recode(prez_dem, '0' = "gop", '1' = "dem"),
            year = as.numeric(year)) %>% 
   select(-prez_dem, -prez_gop) %>% 
   select(-day)
 
+pols_month_df
 ```
 
-```{r}
-n_row_pols_month = nrow(pols_month_df)
-n_col_pols_month = ncol(pols_month_df)
-pols_month_name = colnames(pols_month_df)
-before_pols_month_df = pols_month_df %>% 
-    janitor::clean_names() %>% 
-  select(gov_gop:president)
-summary_pols_month_df = knitr::kable(summary(before_pols_month_df))
-```
-
-There are `r n_row_pols_month` rows and `r n_col_pols_month` columns in the dataset. The variables includes `r pols_month_name` . The summary of the dataset is `r summary_pols_month_df`
+Second, clean the data in snp.csv using a similar process to the above.
 
 ```{r}
 snp_df = 
@@ -101,49 +125,105 @@ snp_df =
 janitor::clean_names() %>% 
    separate(date, into = c("month", "day", "year"), sep = "\\/") %>% 
     mutate(month = month.name[as.numeric(month)]) %>% 
-  mutate(year = recode(year, '50' = "1950",'51' = "1951",'52' = "1952",'53' = "1953",'54' = "1954",'55' = "1955",'56' = "1956",'57' = "1957",'58' = "1958",'59' = "1959",'60' = "1961",'62' = "1962",'563' = "1963",'64' = "1964",'65' = "1965",'66' = "1966",'67' = "1967",'68' = "1968",'69' = "1969",'70' = "1970",'71' = "1971",'72' = "1972",'73' = "1973",'74' = "1974",'75' = "1975",'76' = "1976",'77' = "1977",'78' = "1978",'79' = "1979",'80' = "1980",'81' = "1981",'82' = "1982",'83' = "1983",'84' = "1984",'85' = "1985",'86' = "1986",'87' = "1987",'88' = "1988",'89' = "1989",'90' = "1990",'91' = "1951",'51' = "1951",'51' = "1951",'51' = "1951",'51' = "1951",'51' = "1951",'51' = "1951",'51' = "1951",'91' = "1991",'92' = "1992",'93' = "1993",'94' = "1994",'95' = "1995",'96' = "1996",'97' = "1997",'98' = "1998",'99' = "1999",'00' = "2000",'01' = "2001",'02' = "2002",'03' = "2003",'04' = "2004",'05' = "2005",'06' = "2006",'07' = "2007",'08' = "2008",'09' = "2009",'10' = "2010",'11' = "2011",'12' = "2012",'13' = "2013",'14' = "2014",'15' = "2015")) %>% 
+  mutate(year = recode(year, '50' = "1950",'51' = "1951",'52' = "1952",'53' = "1953",'54' = "1954",'55' = "1955",'56' = "1956",'57' = "1957",'58' = "1958",'59' = "1959",'60' = "1960",'61' = "1961",'62' = "1962",'63' = "1963",'64' = "1964",'65' = "1965",'66' = "1966",'67' = "1967",'68' = "1968",'69' = "1969",'70' = "1970",'71' = "1971",'72' = "1972",'73' = "1973",'74' = "1974",'75' = "1975",'76' = "1976",'77' = "1977",'78' = "1978",'79' = "1979",'80' = "1980",'81' = "1981",'82' = "1982",'83' = "1983",'84' = "1984",'85' = "1985",'86' = "1986",'87' = "1987",'88' = "1988",'89' = "1989",'90' = "1990",'91' = "1991",'92' = "1992",'93' = "1993",'94' = "1994",'95' = "1995",'96' = "1996",'97' = "1997",'98' = "1998",'99' = "1999",'00' = "2000",'01' = "2001",'02' = "2002",'03' = "2003",'04' = "2004",'05' = "2005",'06' = "2006",'07' = "2007",'08' = "2008",'09' = "2009",'10' = "2010",'11' = "2011",'12' = "2012",'13' = "2013",'14' = "2014",'15' = "2015")) %>% 
+      mutate(year = as.numeric(year)) %>% 
+  select(-day) %>% 
   arrange(year, month) %>% 
-  relocate(year, month)
+  relocate(year, month,everything())
+
+snp_df
 ```
 
-```{r}
-n_row_snp = nrow(snp_df)
-n_col_snp = ncol(snp_df)
-snp_name = colnames(snp_df)
-before_summary_snp_df = snp_df %>% 
-    janitor::clean_names() %>% 
-  select(close)
-summary_snp_df = knitr::kable(summary(before_summary_snp_df))
-```
-
-There are `r n_row_snp` rows and `r n_col_snp` columns in the dataset. The variables includes `r snp_name` . The summary of the dataset is `r summary_snp_df`
+Third, tidy the unemployment data so that it can be merged with the previous datasets.
 
 ```{r}
-unempoyment_df = 
+unemployment_df = 
   read_csv("./data_hw2/unemployment.csv") %>% 
   janitor::clean_names() %>% 
 pivot_longer(
   jan:dec,
     names_to = "month",
   values_to = "percentage") %>% 
+      mutate(year = as.numeric(year)) %>% 
   mutate(month = as.factor(month)) %>% 
   mutate(month = month.name[month])
+
+unemployment_df
+```
+
+Join the three datasets above:
+
+```{r}
+five_thirty_eight_df = 
+  left_join(pols_month_df, snp_df, unemployment_df, by = c("year", "month"))
+
+five_thirty_eight_df
+```
+
+conclusion data
+
+```{r}
+n_row_pols_month = nrow(pols_month_df)
+n_col_pols_month = ncol(pols_month_df)
+pols_month_name = colnames(pols_month_df)
+pols_month_year_max = max(pull(pols_month_df,year))
+pols_month_year_min = min(pull(pols_month_df,year))
+before_pols_month_df = pols_month_df %>% 
+    janitor::clean_names() %>% 
+  select(gov_gop:president)
+summary_pols_month_df = knitr::kable(summary(before_pols_month_df))
+```
+
+
+```{r}
+n_row_snp = nrow(snp_df)
+n_col_snp = ncol(snp_df)
+snp_name = colnames(snp_df)
+snp_year_max = max(pull(snp_df,year))
+snp_year_min = min(pull(snp_df,year))
+before_summary_snp_df = snp_df %>% 
+    janitor::clean_names() %>% 
+  select(close)
+summary_snp_df = knitr::kable(summary(before_summary_snp_df))
+```
+
+
+```{r}
+n_row_unemployment = nrow(unemployment_df)
+n_col_unemployment = ncol(unemployment_df)
+unemployment_name = colnames(unemployment_df)
+unemployment_year_max = max(pull(unemployment_df,year))
+unemployment_year_min = min(pull(unemployment_df,year))
+before_unemployment_df = unemployment_df %>% 
+    janitor::clean_names() %>% 
+  select(percentage)
+summary_unemployment_df = knitr::kable(summary(before_unemployment_df))
 ```
 
 ```{r}
-n_row_unempoyment = nrow(unempoyment_df)
-n_col_unempoyment = ncol(unempoyment_df)
-unempoyment_name = colnames(unempoyment_df)
-before_unempoyment_df = unempoyment_df %>% 
+n_row_five_thirty_eight = nrow(five_thirty_eight_df)
+n_col_five_thirty_eight = ncol(five_thirty_eight_df)
+five_thirty_eight_name = colnames(five_thirty_eight_df)
+five_thirty_eight_year_max = max(pull(five_thirty_eight_df,year))
+five_thirty_eight_year_min = min(pull(five_thirty_eight_df,year))
+before_five_thirty_eight_df = five_thirty_eight_df %>% 
     janitor::clean_names() %>% 
-  select(percentage)
-summary_unempoyment_df = knitr::kable(summary(before_unempoyment_df))
+  select(gov_gop:close)
+summary_five_thirty_eight_df = knitr::kable(summary(before_five_thirty_eight_df))
 ```
+**CONCLUSION 2**
+In the pol month dataset, there are `r n_row_pols_month` rows and `r n_col_pols_month` columns in the dataset. The data cover from `r pols_month_year_min`  to `r `pols_month_year_max`.The variables includes `r pols_month_name` . The summary of the dataset is `r summary_pols_month_df`
 
-There are `r n_row_unempoyment` rows and `r n_col_unempoyment` columns in the dataset. The variables includes `r unempoyment_name`. The summary of the dataset is `r summary_unempoyment_df`
+In the snp dataset, there are `r n_row_snp` rows and `r n_col_snp` columns in the dataset. The data cover from `r snp_year_min`  to `r snp_year_max`.The variables includes `r snp_name` . The summary of the dataset is `r summary_snp_df`
+
+In the unemployment dataset, there are `r n_row_unemployment` rows and `r n_col_unemployment` columns in the dataset. The data cover from `r unemployment_year_min`  to `r unemployment_year_max` .The variables includes `r unemployment_name`. The summary of the dataset is `r summary_unemployment_df`
+
+In the joint dataset, there are `r n_row_five_thirty_eight` rows and `r n_col_five_thirty_eight` columns in the dataset. The data cover from  `r five_thirty_eight_year_min` to `r five_thirty_eight_year_max` . The variables includes `r five_thirty_eight_name` . The summary of the dataset is `r summary_five_thirty_eight_df`
+
 
 **Problem 3**
 
+Load and tidy the data.
 
 ```{r}
 popular_baby_names_df = 
@@ -153,6 +233,7 @@ popular_baby_names_df =
   distinct(year_of_birth,gender,ethnicity,childs_first_name,count,rank, .keep_all = TRUE)
 ```
 
+Produce a well-structured, reader-friendly table showing the rank in popularity of the name `Olivia` as a female baby name over time
 
 ```{r}
 olivia_df = filter(popular_baby_names_df, childs_first_name == "Olivia", gender == "FEMALE") %>% 
@@ -164,7 +245,7 @@ olivia_df = filter(popular_baby_names_df, childs_first_name == "Olivia", gender 
 knitr::kable(olivia_df)
 ```
 
-
+ Produce a similar table showing the most popular name among male children over time.
 
 ```{r}
 popular_male_name_df = filter(popular_baby_names_df,gender == "MALE", rank == 1) %>% 
@@ -176,10 +257,11 @@ popular_male_name_df = filter(popular_baby_names_df,gender == "MALE", rank == 1)
 knitr::kable(popular_male_name_df)
 ```
 
-
-
+Finally, for male, white non-hispanic children born in 2016, produce a scatter plot showing the number of children with a name (y axis) against the rank in popularity of that name (x axis).
 
 ```{r}
-male_white_2016_df = filter(popular_baby_names_df,gender == "MALE", ethnicity == "WHITE NON HISPANIC", year_of_birth == 2016) 
+male_white_2016_df = filter(popular_baby_names_df,gender == "MALE", ethnicity == "WHITE NON HISPANIC", year_of_birth == 2016) %>% 
+  select(childs_first_name, rank, count)
+
 ggplot(male_white_2016_df, aes(x = rank, y = count)) + geom_point()
 ```
